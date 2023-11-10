@@ -2,7 +2,46 @@
 
 const assert = require('assert')
 
-const words = [
+let tree = {}
+
+const print = (obj) => console.log(JSON.stringify(obj, null, 2))
+
+const expandNode = (prefix, node) => {
+  let suggestions = []
+  for (const [k, v] of Object.entries(node)) {
+    if (typeof v === 'object') {
+      suggestions = [...suggestions, ...expandNode(prefix + k, v)]
+    } else {
+      suggestions = [...suggestions, {
+        value: prefix,
+        count: v,
+      }]
+    }
+  }
+  return suggestions
+}
+
+const suggest = (prefix) => {
+  let node = tree
+  prefix.split('').map((letter, i, all) => {
+    const nextNode = node[letter] || {}
+    if (i === all.length - 1) {
+      // assume this is a new word we're learning
+      nextNode['.'] = (nextNode['.'] || 0) + 1
+    }
+    node[letter] = nextNode
+    node = nextNode
+  })
+  return expandNode(prefix, node)
+    .filter(x => x.value !== prefix)
+    .sort((a, b) => b.count - a.count)
+    .map(x => x.value)
+}
+
+// /--------------------------------------------------------------------------------/
+// initial state
+// /--------------------------------------------------------------------------------/
+[
   'lady',
   'ladybird',
   'land',
@@ -16,43 +55,12 @@ const words = [
   'lesson',
   'lord',
   'lordhuron',
-]
-
-let tree = {}
-
-const print = (obj) => console.log(JSON.stringify(obj, null, 2))
-
-const expandNode = (prefix, node) => {
-  let words = []
-  for (const [k, v] of Object.entries(node)) {
-    if (typeof v === 'object') {
-      words = [...words, ...expandNode(prefix + k, v)]
-    } else {
-      words = [...words, prefix]
-    }
-  }
-  return words
-}
-
-const suggest = (prefix) => {
-  let node = tree
-  prefix.split('').map((letter, i, all) => {
-    const nextNode = node[letter] || {}
-    if (i === all.length - 1) {
-      // assume this is a new word we're learning
-      nextNode['.'] = 1
-    }
-    node[letter] = nextNode
-    node = nextNode
-  })
-  return expandNode(prefix, node)
-    .filter(x => x !== prefix)
-    .sort()
-}
-
-words.map(word => suggest(word))
+].map(word => suggest(word))
 
 
+// /--------------------------------------------------------------------------------/
+// tests
+// /--------------------------------------------------------------------------------/
 
 // happy path
 let actual = suggest('las')
@@ -77,4 +85,13 @@ actual = suggest('k')
 expected = ['kiwi']
 assert.deepEqual(actual, expected)
 
-
+// suggest by popularity
+suggest('beans')
+suggest('beer')
+actual = suggest('be')
+expected = ['beans', 'beer']
+assert.deepEqual(actual, expected)
+suggest('beer')
+actual = suggest('be')
+expected = ['beer', 'beans']
+assert.deepEqual(actual, expected)
