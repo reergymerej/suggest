@@ -1,6 +1,6 @@
 # suggest
 
-[https://github.com/reergymerej/suggest](https://github.com/reergymerej/suggest)
+[https://reergymerej.github.io/blog/2023/11/10/suggest.html](https://reergymerej.github.io/blog/2023/11/10/suggest.html)
 
 This is a little thing that will suggest auto-completion values for you.
 
