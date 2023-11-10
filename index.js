@@ -20,19 +20,6 @@ const words = [
 
 let tree = {}
 
-words.map(word => {
-  let node = tree
-  word.split('').map((letter, i, all) => {
-    const nextNode = node[letter] || {}
-    if (i === all.length - 1) {
-      nextNode['.'] = 1
-    }
-    node[letter] = nextNode
-    node = node[letter]
-  })
-})
-
-
 const print = (obj) => console.log(JSON.stringify(obj, null, 2))
 
 const expandNode = (prefix, node) => {
@@ -47,20 +34,47 @@ const expandNode = (prefix, node) => {
   return words
 }
 
-const suggest = (tree, prefix) => {
+const suggest = (prefix) => {
   let node = tree
-  prefix.split('').map(letter => {
-    node = node[letter]
+  prefix.split('').map((letter, i, all) => {
+    const nextNode = node[letter] || {}
+    if (i === all.length - 1) {
+      // assume this is a new word we're learning
+      nextNode['.'] = 1
+    }
+    node[letter] = nextNode
+    node = nextNode
   })
-  // TODO: bail when we have no suggestions
   return expandNode(prefix, node)
+    .filter(x => x !== prefix)
+    .sort()
 }
 
-const actual = suggest(tree, 'las')
-const expected = [
+words.map(word => suggest(word))
+
+
+
+// happy path
+let actual = suggest('las')
+let expected = [
   'laser',
   'laserbeam',
   'laserface',
   'lasergun',
 ]
 assert.deepEqual(actual, expected)
+
+// missing value
+actual = suggest('juic')
+expected = []
+assert.deepEqual(actual, expected)
+
+// build tree as values are asked for
+actual = suggest('kiwi')
+expected = []
+assert.deepEqual(actual, expected)
+actual = suggest('k')
+expected = ['kiwi']
+assert.deepEqual(actual, expected)
+
+
