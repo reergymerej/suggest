@@ -2,7 +2,7 @@
 
 const assert = require('assert')
 
-let tree = {}
+const tree = {}
 
 const print = (obj) => console.log(JSON.stringify(obj, null, 2))
 
@@ -21,8 +21,11 @@ const expandNode = (prefix, node) => {
   return suggestions
 }
 
+const cache = {}
+
 const suggest = (prefix) => {
   let node = tree
+
   prefix.split('').map((letter, i, all) => {
     const nextNode = node[letter] || {}
     if (i === all.length - 1) {
@@ -32,10 +35,17 @@ const suggest = (prefix) => {
     node[letter] = nextNode
     node = nextNode
   })
-  return expandNode(prefix, node)
+  // TODO: Use the cache while also updating the count.
+  // if (prefix in cache) {
+  //   console.log('cached')
+  //   return cache[prefix]
+  // }
+  const result = expandNode(prefix, node)
     .filter(x => x.value !== prefix)
     .sort((a, b) => b.count - a.count)
     .map(x => x.value)
+  cache[prefix] = result
+  return result
 }
 
 // /--------------------------------------------------------------------------------/
@@ -95,3 +105,14 @@ suggest('beer')
 actual = suggest('be')
 expected = ['beer', 'beans']
 assert.deepEqual(actual, expected)
+
+// caching
+for (let i = 0; i < 100; i++) {
+  let start = process.hrtime.bigint()
+  suggest('la')
+  const first = process.hrtime.bigint() - start
+  start = process.hrtime.bigint()
+  suggest('la')
+  const second = process.hrtime.bigint() - start
+  // assert(second < first, 'second call should be faster')
+}
